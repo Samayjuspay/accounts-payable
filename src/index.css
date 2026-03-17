@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #d4d4d8;
+    border-radius: 10px;
+  }
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: #a1a1aa;
+  }
+
+  .xyne-resize-handle-right,
+  .xyne-resize-handle-left {
+    width: 12px !important;
+  }
+
+  .xyne-resize-handle-bottom {
+    height: 12px !important;
+  }
+
+  .xyne-resize-handle-bottom-right,
+  .xyne-resize-handle-bottom-left {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .xyne-resize-handle-right::after,
+  .xyne-resize-handle-left::after,
+  .xyne-resize-handle-bottom::after,
+  .xyne-resize-handle-bottom-right::after,
+  .xyne-resize-handle-bottom-left::after {
+    content: "";
+    position: absolute;
+    border-radius: 999px;
+    background: transparent;
+    transition: background 150ms ease;
+  }
+
+  .xyne-resize-handle-right::after {
+    top: 10px;
+    right: 2px;
+    bottom: 10px;
+    width: 2px;
+  }
+
+  .xyne-resize-handle-left::after {
+    top: 10px;
+    left: 2px;
+    bottom: 10px;
+    width: 2px;
+  }
+
+  .xyne-resize-handle-bottom::after {
+    left: 10px;
+    right: 10px;
+    bottom: 2px;
+    height: 2px;
+  }
+
+  .xyne-resize-handle-bottom-right::after {
+    right: 3px;
+    bottom: 3px;
+    width: 10px;
+    height: 10px;
+    clip-path: polygon(100% 0, 0 100%, 100% 100%);
+  }
+
+  .xyne-resize-handle-bottom-left::after {
+    left: 3px;
+    bottom: 3px;
+    width: 10px;
+    height: 10px;
+    clip-path: polygon(0 0, 0 100%, 100% 100%);
+  }
+
+  .xyne-resize-handle-right:hover::after,
+  .xyne-resize-handle-left:hover::after,
+  .xyne-resize-handle-bottom:hover::after,
+  .xyne-resize-handle-bottom-right:hover::after,
+  .xyne-resize-handle-bottom-left:hover::after {
+    background: #3b82f6;
+  }
+
+  @keyframes slideInAndHighlight {
+    0% {
+      transform: translateY(-12px);
+      opacity: 0;
+      background: transparent;
+    }
+    40% {
+      transform: translateY(0);
+      opacity: 1;
+      background: #dbeafe;
+    }
+    100% {
+      background: transparent;
+    }
+  }
+
+  .pr-new-row {
+    animation: slideInAndHighlight 1.5s ease-out;
+  }
+}
