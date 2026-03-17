@@ -1,6 +1,3 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://cdn.sanity.io/images/9sed75bn/production/7837d0ea18330f0fbb4713428dbf49a67633bc0f-1920x1080.png?auto=format" />
-</div>
 
 # This is protoype 
 
