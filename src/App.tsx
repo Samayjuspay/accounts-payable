@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { XyneAIChat } from './components/XyneAIChat';
+import PRDetailView from './components/PRDetailView';
+import { PRDetailPage } from './components/PRDetailPage';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { AI_DASHBOARD_PR_OVERRIDES, MOCK_VENDORS } from './constants/mockData';
 import { AIConversationPRPayload } from './types/ai.types';
@@ -949,222 +951,6 @@ const NotificationsPopover = ({ isOpen, onClose, notifications, onMarkRead }: {
   );
 };
 
-const FullDetailsView = ({ 
-  pr, 
-  onClose 
-}: { 
-  pr: PurchaseRequest, 
-  onClose: () => void 
-}) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-zinc-900/40 backdrop-blur-sm flex justify-end"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="w-full max-w-5xl bg-zinc-50 h-full shadow-2xl flex flex-col overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <header className="bg-white border-b border-zinc-200 px-8 py-4 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={onClose}
-              className="p-2 -ml-2 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-full transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <div className="h-6 w-px bg-zinc-200 mx-2"></div>
-            <div className="flex items-center gap-3">
-              <Ticket className="w-5 h-5 text-blue-600" />
-              <h2 className="text-xl font-mono font-bold text-zinc-900">{pr.id}</h2>
-              <button 
-                onClick={() => {
-                  navigator.clipboard.writeText(pr.id);
-                  toast.success('PR Number copied to clipboard');
-                }}
-                className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                title="Copy PR Number"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
-              {getStatusBadge(pr.status)}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="p-2 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-lg transition-colors">
-              <MoreHorizontal className="w-5 h-5" />
-            </button>
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <div className="max-w-5xl mx-auto p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Panel */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Vendors */}
-              <section className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm">
-                <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-wider mb-4">Vendors</h3>
-                <div className="space-y-4">
-                  {pr.vendors.map((vendor, idx) => (
-                    <div key={vendor} className={`p-4 rounded-xl border ${idx === 0 ? 'border-blue-200 bg-blue-50/30' : 'border-zinc-100 bg-zinc-50/30'} flex items-center justify-between`}>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${idx === 0 ? 'bg-blue-100 text-blue-700' : 'bg-zinc-200 text-zinc-600'}`}>
-                          {vendor.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-zinc-900">{vendor}</div>
-                          <div className="text-xs text-zinc-500">Primary Contact: contact@{vendor.toLowerCase().replace(/ /g, '')}.com</div>
-                        </div>
-                      </div>
-                      {idx === 0 && (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase rounded">Selected</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Detailed Timeline */}
-              <section className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm">
-                <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-wider mb-6">Detailed Lifecycle</h3>
-                <div className="space-y-8 relative before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-100">
-                  {[
-                    { stage: 'Draft', status: 'Completed', date: pr.createdAt, user: pr.createdBy, notes: 'Initial draft created with basic requirements.' },
-                    { stage: 'Approval Pending', status: pr.status === 'Draft' ? 'Upcoming' : 'Completed', date: pr.lastUpdated, user: 'System', notes: 'Sent for internal review.' },
-                    { stage: 'Approved', status: ['Approved', 'PO Created', 'Bill Received', 'Payment Done'].includes(pr.status) ? 'Completed' : pr.status === 'Rejected' ? 'Rejected' : 'Upcoming', date: '-', user: 'Finance Team', notes: '-' },
-                    { stage: 'PO Created', status: ['PO Created', 'Bill Received', 'Payment Done'].includes(pr.status) ? 'Completed' : 'Upcoming', date: '-', user: 'Procurement', notes: '-' }
-                  ].map((item, idx) => (
-                    <div key={item.stage} className="relative pl-10">
-                      <div className={`absolute left-0 top-1 w-8 h-8 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 ${
-                        item.status === 'Completed' ? 'bg-blue-600 text-white' : 
-                        item.status === 'Rejected' ? 'bg-red-600 text-white' : 'bg-zinc-200 text-zinc-400'
-                      }`}>
-                        {item.status === 'Completed' ? <Check className="w-4 h-4" /> : 
-                         item.status === 'Rejected' ? <X className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between">
-                          <span className={`font-bold ${item.status === 'Upcoming' ? 'text-zinc-400' : 'text-zinc-900'}`}>{item.stage}</span>
-                          <span className="text-xs text-zinc-400">{item.date}</span>
-                        </div>
-                        <div className="text-sm text-zinc-500">Performed by: {item.user}</div>
-                        {item.notes !== '-' && <div className="mt-2 p-3 bg-zinc-50 rounded-lg text-sm text-zinc-600 border border-zinc-100 italic">"{item.notes}"</div>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Line Items */}
-              <section className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-zinc-100 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-wider">Line Items</h3>
-                  <span className="text-sm font-mono font-bold text-blue-600">Total: ₹{pr.amount.toLocaleString()}</span>
-                </div>
-                <table className="w-full text-left">
-                  <thead className="bg-zinc-50 border-b border-zinc-100">
-                    <tr>
-                      <th className="px-6 py-3 text-[10px] font-bold text-zinc-500 uppercase">Item</th>
-                      <th className="px-6 py-3 text-[10px] font-bold text-zinc-500 uppercase text-right">Qty</th>
-                      <th className="px-6 py-3 text-[10px] font-bold text-zinc-500 uppercase text-right">Price</th>
-                      <th className="px-6 py-3 text-[10px] font-bold text-zinc-500 uppercase text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100">
-                    {[
-                      { name: 'MacBook Pro 14"', qty: 1, price: pr.amount * 0.7 },
-                      { name: 'Dell UltraSharp 27"', qty: 2, price: pr.amount * 0.15 }
-                    ].map((item, idx) => (
-                      <tr key={idx}>
-                        <td className="px-6 py-4 text-sm font-medium text-zinc-900">{item.name}</td>
-                        <td className="px-6 py-4 text-sm text-zinc-600 text-right">{item.qty}</td>
-                        <td className="px-6 py-4 text-sm text-zinc-600 text-right">₹{item.price.toLocaleString()}</td>
-                        <td className="px-6 py-4 text-sm font-semibold text-zinc-900 text-right">₹{(item.qty * item.price).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-            </div>
-
-            {/* Right Panel */}
-            <div className="space-y-6">
-              <section className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm sticky top-0">
-                <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-wider mb-6">Details</h3>
-                <div className="space-y-6">
-                  <MetadataItem icon={Calendar} label="Due Date" value={formatRelativeDate(pr.dueDate)} color={getDaysUntil(pr.dueDate) < 0 ? 'text-red-600' : ''} />
-                  <MetadataItem icon={User} label="Created By" value={pr.createdBy} />
-                  <MetadataItem icon={Receipt} label="Amount" value={`₹${pr.amount.toLocaleString()}`} />
-                  <MetadataItem icon={Folder} label="Category" value={pr.category} />
-                  <MetadataItem icon={Users} label="Department" value={pr.department} />
-                  <MetadataItem icon={Clock} label="Created At" value={pr.createdAt} />
-                  <MetadataItem icon={RefreshCw} label="Last Updated" value={pr.lastUpdated} />
-                </div>
-
-                <div className="mt-8 pt-8 border-t border-zinc-100 space-y-4">
-                  <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Attachments</h4>
-                  <div className="grid grid-cols-1 gap-2">
-                    {['quote_v1.pdf', 'specs_final.xlsx'].map(file => (
-                      <div key={file} className="flex items-center justify-between p-2 bg-zinc-50 rounded-lg border border-zinc-100 group cursor-pointer hover:bg-zinc-100 transition-colors">
-                        <div className="flex items-center gap-2">
-                          <Paperclip className="w-3.5 h-3.5 text-zinc-400" />
-                          <span className="text-xs text-zinc-600 truncate">{file}</span>
-                        </div>
-                        <Download className="w-3.5 h-3.5 text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-8 space-y-3">
-                  {pr.status === 'Approval Pending' ? (
-                    <>
-                      <button className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">Approve Request</button>
-                      <button className="w-full py-3 bg-white border border-zinc-200 text-zinc-700 rounded-xl font-bold hover:bg-zinc-50 transition-colors">Reject Request</button>
-                    </>
-                  ) : (
-                    <button className="w-full py-3 bg-white border border-zinc-200 text-zinc-700 rounded-xl font-bold hover:bg-zinc-50 transition-colors">Edit Request</button>
-                  )}
-                </div>
-              </section>
-
-              <section className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm">
-                <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-wider mb-4">Comments</h3>
-                <div className="space-y-4 mb-6">
-                  <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-zinc-200 shrink-0" />
-                    <div className="flex flex-col gap-1">
-                      <div className="text-xs font-bold text-zinc-900">Eva Green <span className="font-normal text-zinc-400 ml-1">2h ago</span></div>
-                      <div className="text-sm text-zinc-600 bg-zinc-50 p-3 rounded-xl rounded-tl-none border border-zinc-100">Please check the vendor comparison for this PR.</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="relative">
-                  <textarea 
-                    placeholder="Add a comment..."
-                    className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 min-h-[80px] resize-none"
-                  />
-                  <button className="absolute bottom-2 right-2 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-              </section>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
 const Timeline = ({ status, size = 'md' }: { status: PRStatus, size?: 'sm' | 'md' | 'lg' }) => {
   const stages: PRStatus[] = ['Draft', 'Approval Pending', 'Approved', 'PO Created', 'Bill Received'];
   const activeIndex = stages.indexOf(status);
@@ -1683,8 +1469,7 @@ export default function App() {
           break;
         case 'e':
           if (focusedRowIndex >= 0 && focusedRowIndex < filteredData.length) {
-            setSelectedPR(filteredData[focusedRowIndex]);
-            setDrawerOpen(true);
+            setSelectedPRForDetails(filteredData[focusedRowIndex]);
           }
           break;
         case 'a':
@@ -1938,8 +1723,7 @@ export default function App() {
   };
 
   const handleRowClick = (pr: PurchaseRequest) => {
-    setSelectedPR(pr);
-    setDrawerOpen(true);
+    setSelectedPRForDetails(pr);
   };
 
   const handleCopy = (text: string, e: React.MouseEvent) => {
@@ -3664,108 +3448,16 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Side Drawer */}
       <AnimatePresence>
         {selectedPRForDetails && (
-          <FullDetailsView 
+          <PRDetailView 
             pr={selectedPRForDetails} 
-            onClose={() => setSelectedPRForDetails(null)} 
+            onClose={() => setSelectedPRForDetails(null)}
+            getStatusBadge={getStatusBadge}
           />
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {drawerOpen && selectedPR && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setDrawerOpen(false)}
-              className="fixed inset-0 bg-zinc-900/20 backdrop-blur-sm z-40"
-            />
-            <motion.div 
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl border-l border-zinc-200 z-50 flex flex-col"
-            >
-              <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/50">
-                <div>
-                  <h2 className="text-lg font-semibold text-zinc-900">{selectedPR.id}</h2>
-                  <p className="text-sm text-zinc-500 mt-0.5">Created on {new Date(selectedPR.createdAt).toLocaleDateString()}</p>
-                </div>
-                <button 
-                  onClick={() => setDrawerOpen(false)}
-                  className="p-2 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-3">Status</h3>
-                    <div>{getStatusBadge(selectedPR.status)}</div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-2">Requester</h3>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-sm font-medium text-blue-700 border border-blue-100">
-                          {selectedPR.createdBy.charAt(0)}
-                        </div>
-                        <span className="text-sm font-medium text-zinc-900">{selectedPR.createdBy}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-2">Due Date</h3>
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium border ${getDueDateColor(selectedPR.dueDate)}`}>
-                        {formatRelativeDate(selectedPR.dueDate)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-zinc-100 pt-6">
-                    <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-3">Vendors</h3>
-                    <div className="space-y-2">
-                      {selectedPR.vendors.map((vendor, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 bg-zinc-50">
-                          <span className="text-sm font-medium text-zinc-900">{vendor}</span>
-                          <span className="text-xs text-zinc-500">Pending Onboarding</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="border-t border-zinc-100 pt-6">
-                    <h3 className="text-sm font-medium text-zinc-500 uppercase tracking-wider mb-3">Line Items</h3>
-                    <div className="p-8 border-2 border-dashed border-zinc-200 rounded-xl flex flex-col items-center justify-center text-center">
-                      <ShoppingCart className="w-8 h-8 text-zinc-300 mb-2" />
-                      <p className="text-sm font-medium text-zinc-900">No items added yet</p>
-                      <p className="text-xs text-zinc-500 mt-1">Line items will appear here once added.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {selectedPR.status === 'Approval Pending' && (
-                <div className="p-4 border-t border-zinc-200 bg-zinc-50 flex items-center gap-3">
-                  <button className="flex-1 px-4 py-2 bg-white border border-zinc-200 rounded-lg text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors shadow-sm">
-                    Reject
-                  </button>
-                  <button className="flex-1 px-4 py-2 bg-blue-600 rounded-lg text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm">
-                    Approve Request
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
       </motion.div>
     </div>
   );
