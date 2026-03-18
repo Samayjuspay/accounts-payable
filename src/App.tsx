@@ -2201,7 +2201,8 @@ function App() {
 
   const mainMarginLeft = isMobile ? 0 : (isSidebarCollapsed ? 64 : (isTablet ? 64 : 280));
 
-  return (
+  // Dashboard Layout Component
+  const DashboardLayout = () => (
     <div className="h-screen bg-zinc-50 font-sans text-zinc-900 flex overflow-hidden">
       <Toaster position="top-right" />
       
@@ -3763,6 +3764,28 @@ function App() {
       </AnimatePresence>
       </motion.div>
     </div>
+  );
+
+  // Main App with Routes
+  return (
+    <Routes>
+      {/* Create PR - Full Page (Outside Dashboard Layout) */}
+      <Route 
+        path="/createPR" 
+        element={
+          <div className="h-screen bg-white">
+            <Toaster position="top-right" />
+            <CreatePRPage
+              onBack={() => window.location.href = '/'}
+              onSubmitForApproval={handleCreatePRFromForm}
+            />
+          </div>
+        } 
+      />
+      
+      {/* Dashboard Routes - With Layout */}
+      <Route path="/*" element={<DashboardLayout />} />
+    </Routes>
   );
 };
 
