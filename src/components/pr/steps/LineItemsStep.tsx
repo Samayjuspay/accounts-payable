@@ -69,8 +69,22 @@ export const LineItemsStep: React.FC = () => {
     setValue('totalAmount', summary.total, { shouldValidate: true });
   }, [setValue, summary.total]);
 
-  // Check for AI-predicted items from full predictions
+  // Check for AI-predicted items from form data or global predictions
   useEffect(() => {
+    // First check if items are already in form data (set by BasicInfoStep)
+    const currentItems = watch('items') || [];
+    const hasAIItems = currentItems.some((item: { _aiGenerated?: boolean }) => item._aiGenerated);
+    
+    if (hasAIItems && !aiApplied) {
+      setAiApplied(true);
+      const aiItemCount = currentItems.filter((item: { _aiGenerated?: boolean }) => item._aiGenerated).length;
+      toast.success(`${aiItemCount} items auto-added by AI`, {
+        description: 'Review and edit as needed',
+      });
+      return;
+    }
+    
+    // Fallback: Check global predictions (for backward compatibility)
     const fullPredictions = (window as unknown as { __aiFullPredictions?: { items?: AIPredictedItem[] } }).__aiFullPredictions;
     
     if (fullPredictions?.items && fullPredictions.items.length > 0 && !aiApplied) {
@@ -105,7 +119,7 @@ export const LineItemsStep: React.FC = () => {
       // Clear the global predictions after applying
       (window as unknown as { __aiFullPredictions?: unknown }).__aiFullPredictions = undefined;
     }
-  }, [replace, aiApplied]);
+  }, [replace, aiApplied, watch]);
 
   const addItem = () => {
     append({

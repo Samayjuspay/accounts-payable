@@ -103,6 +103,26 @@ export const BasicInfoStep: React.FC = () => {
       setValue('budget.aiCostCenter', predictions.budget.costCenter);
     }
 
+    // Apply items directly to form
+    if (predictions.items && predictions.items.length > 0) {
+      const formItems = predictions.items.map((item, index) => ({
+        id: `ai-${Date.now()}-${index}`,
+        productName: item.name,
+        description: item.description,
+        quantity: item.quantity,
+        unit: item.unit || 'Units',
+        unitPrice: item.unitPrice,
+        taxRate: 18,
+        total: item.total,
+        category: predictions.basicInfo.category || 'Software',
+        expectedDelivery: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        _aiGenerated: true,
+        _sourcePR: item.source,
+        _confidence: item.confidence,
+      }));
+      setValue('items', formItems, { shouldValidate: true });
+    }
+
     // Apply delivery info
     if (predictions.delivery.address) {
       setValue('delivery.locationType', 'new');
