@@ -2,14 +2,20 @@ import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { PRFormData } from '../../../types/pr.types';
 import { MOCK_VENDORS } from '../../../constants/mockData';
-import { CheckCircle2, Edit3, AlertCircle, FileText, ShoppingCart, Users, Wallet, Truck, Paperclip, ShieldCheck, Send, Save, FileCheck } from 'lucide-react';
+import { CheckCircle2, Edit3, AlertCircle, FileText, ShoppingCart, Users, Wallet, Truck, Paperclip, ShieldCheck } from 'lucide-react';
+import {
+  Button as BlendButton,
+  ButtonSize as BlendButtonSize,
+  ButtonType as BlendButtonType,
+  Checkbox as BlendCheckbox,
+} from '@juspay/blend-design-system';
 
 interface ReviewStepProps {
   onEdit: (step: number) => void;
 }
 
 export const ReviewStep: React.FC<ReviewStepProps> = ({ onEdit }) => {
-  const { watch, register, formState: { errors } } = useFormContext<PRFormData>();
+  const { watch, setValue } = useFormContext<PRFormData>();
   const data = watch();
 
   const selectedVendor = MOCK_VENDORS.find(v => v.id === data.vendorSelection.selectedVendorId);
@@ -37,19 +43,19 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ onEdit }) => {
                 <div className="text-[10px] text-zinc-500 font-medium">{item.quantity} {item.unit} × ${item.unitPrice.toLocaleString()}</div>
               </div>
             </div>
-            <div className="text-sm font-black text-zinc-900">${item.total.toLocaleString()}</div>
+            <div className="text-sm font-semibold text-zinc-900">${item.total.toLocaleString()}</div>
           </div>
         ))}
         <div className="flex justify-between items-center pt-2 px-2 border-t border-zinc-100">
-          <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Total Amount</span>
-          <span className="text-lg font-black text-blue-600">${data.totalAmount.toLocaleString()}</span>
+          <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Total Amount</span>
+          <span className="text-lg font-semibold text-blue-700">${data.totalAmount.toLocaleString()}</span>
         </div>
       </div>
     )},
     { id: 3, title: 'Vendor Selection', icon: Users, content: (
       <div>
         {data.vendorSelection.mode === 'existing' && selectedVendor && (
-          <div className="flex items-center gap-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+          <div className="flex items-center gap-4 p-4 bg-zinc-50 rounded-2xl border border-zinc-200">
             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm border border-blue-100">
               <Users className="w-6 h-6 text-blue-600" />
             </div>
@@ -76,10 +82,10 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ onEdit }) => {
     { id: 4, title: 'Budget & Approval', icon: Wallet, content: (
       <div className="space-y-6">
         {data.budget ? (
-          <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex items-center justify-between">
+          <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-200 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-emerald-100">
-                <Wallet className="w-5 h-5 text-emerald-600" />
+              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-zinc-200">
+                <Wallet className="w-5 h-5 text-zinc-600" />
               </div>
               <div>
                 <div className="text-sm font-bold text-zinc-900">{data.budget.name}</div>
@@ -88,7 +94,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ onEdit }) => {
             </div>
             <div className="text-right">
               <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Allocation</div>
-              <div className="text-sm font-black text-emerald-700">${data.totalAmount.toLocaleString()}</div>
+              <div className="text-sm font-semibold text-zinc-800">${data.totalAmount.toLocaleString()}</div>
             </div>
           </div>
         ) : (
@@ -150,9 +156,9 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ onEdit }) => {
   ];
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-12">
       <div>
-        <h2 className="text-xl font-bold text-zinc-900 tracking-tight">Final Review</h2>
+        <h2 className="text-xl font-semibold text-zinc-900 tracking-tight">Final Review</h2>
         <p className="text-sm text-zinc-500 mt-1">Review your request details before submitting for approval.</p>
       </div>
 
@@ -164,15 +170,15 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ onEdit }) => {
                 <div className="p-2 bg-white rounded-xl shadow-sm border border-zinc-100 text-zinc-400 group-hover:text-blue-600 transition-colors">
                   <section.icon className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-black text-zinc-900 uppercase tracking-tight">{section.title}</h3>
+                <h3 className="text-sm font-semibold text-zinc-900 uppercase tracking-tight">{section.title}</h3>
               </div>
-              <button
-                type="button"
+              <BlendButton
                 onClick={() => onEdit(section.id)}
-                className="flex items-center gap-2 px-3 py-1.5 hover:bg-white rounded-lg text-[10px] font-bold text-blue-600 uppercase tracking-wider transition-all"
-              >
-                <Edit3 className="w-3 h-3" /> Edit
-              </button>
+                buttonType={BlendButtonType.SECONDARY}
+                size={BlendButtonSize.SMALL}
+                text="Edit"
+                leadingIcon={<Edit3 className="w-3 h-3" />}
+              />
             </div>
             <div className="p-6">
               {section.content}
@@ -188,7 +194,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ onEdit }) => {
               <ShieldCheck className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-lg font-bold">Pre-submission Checklist</h3>
+              <h3 className="text-lg font-semibold">Pre-submission Checklist</h3>
               <p className="text-xs text-zinc-400">Ensure all requirements are met for faster approval.</p>
             </div>
           </div>
@@ -201,7 +207,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ onEdit }) => {
                 }`}>
                   <CheckCircle2 className="w-3 h-3" />
                 </div>
-                <span className={`text-sm font-bold ${item.valid ? 'text-white' : 'text-white/40'}`}>{item.label}</span>
+                <span className={`text-sm font-semibold ${item.valid ? 'text-white' : 'text-white/40'}`}>{item.label}</span>
               </div>
             ))}
           </div>
@@ -209,14 +215,13 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ onEdit }) => {
           <div className="pt-4 border-t border-white/10">
             <label className="flex items-start gap-4 cursor-pointer group">
               <div className="relative flex items-center pt-1">
-                <input 
-                  type="checkbox" 
-                  {...register('termsAccepted')}
-                  className="w-5 h-5 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-900"
+                <BlendCheckbox
+                  checked={Boolean(data.termsAccepted)}
+                  onCheckedChange={(checked) => setValue('termsAccepted', Boolean(checked), { shouldValidate: true })}
                 />
               </div>
               <div className="space-y-1">
-                <span className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">I confirm that all information provided is accurate</span>
+                <span className="text-sm font-semibold text-white group-hover:text-blue-400 transition-colors">I confirm that all information provided is accurate</span>
                 <p className="text-xs text-zinc-500 leading-relaxed">
                   By submitting this request, I agree to the company's procurement policy and confirm that 
                   this purchase is strictly for business purposes.
@@ -232,7 +237,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ onEdit }) => {
 
 const Detail: React.FC<{ label: string; value: any; className?: string }> = ({ label, value, className }) => (
   <div className={className}>
-    <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">{label}</div>
-    <div className="text-sm font-bold text-zinc-700">{value || <span className="text-zinc-300 italic">Not provided</span>}</div>
+    <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-1">{label}</div>
+    <div className="text-sm font-semibold text-zinc-700">{value || <span className="text-zinc-300 italic">Not provided</span>}</div>
   </div>
 );

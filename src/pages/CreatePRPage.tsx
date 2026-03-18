@@ -15,6 +15,11 @@ import { usePRForm } from '../hooks/usePRForm';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { PRFormData } from '../types/pr.types';
 import { ArrowRight, ArrowLeft, Send } from 'lucide-react';
+import {
+  Button as BlendButton,
+  ButtonSize as BlendButtonSize,
+  ButtonType as BlendButtonType,
+} from '@juspay/blend-design-system';
 
 interface CreatePRPageProps {
   onBack: () => void;
@@ -151,40 +156,32 @@ export const CreatePRPage: React.FC<CreatePRPageProps> = ({ onBack, onSubmitForA
 
           {/* Navigation Buttons */}
           <div className="pt-12 border-t border-zinc-100 flex justify-between items-center">
-            <button
-              type="button"
+            <BlendButton
               onClick={prevStep}
               disabled={currentStep === 1}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
-                currentStep === 1 
-                  ? 'text-zinc-300 cursor-not-allowed' 
-                  : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
-              }`}
-            >
-              <ArrowLeft className="w-4 h-4" /> Previous Step
-            </button>
+              buttonType={BlendButtonType.SECONDARY}
+              size={BlendButtonSize.MEDIUM}
+              text="Previous Step"
+              leadingIcon={<ArrowLeft className="w-4 h-4" />}
+            />
 
             {currentStep < 7 ? (
-              <button
-                type="button"
+              <BlendButton
                 onClick={nextStep}
-                className="flex items-center gap-2 px-8 py-3 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition-all shadow-lg active:scale-95"
-              >
-                Next Step <ArrowRight className="w-4 h-4" />
-              </button>
+                buttonType={BlendButtonType.PRIMARY}
+                size={BlendButtonSize.MEDIUM}
+                text="Next Step"
+                trailingIcon={<ArrowRight className="w-4 h-4" />}
+              />
             ) : (
-              <button
-                type="button"
+              <BlendButton
                 onClick={onSubmit}
                 disabled={isSubmitting}
-                className={`flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-100 ${
-                  isSubmitting
-                    ? 'bg-blue-400 text-white cursor-wait'
-                    : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
-                }`}
-              >
-                {isSubmitting ? 'Submitting...' : 'Submit for Approval'} <Send className="w-4 h-4" />
-              </button>
+                buttonType={BlendButtonType.PRIMARY}
+                size={BlendButtonSize.MEDIUM}
+                text={isSubmitting ? 'Submitting...' : 'Submit for Approval'}
+                trailingIcon={<Send className="w-4 h-4" />}
+              />
             )}
           </div>
         </div>

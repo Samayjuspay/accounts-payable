@@ -11,6 +11,13 @@ import {
   Button as BlendButton,
   ButtonSize as BlendButtonSize,
   ButtonType as BlendButtonType,
+  SearchInput as BlendSearchInput,
+  StatCard as BlendStatCard,
+  StatCardVariant as BlendStatCardVariant,
+  Tag as BlendTag,
+  TagColor as BlendTagColor,
+  TagSize as BlendTagSize,
+  TagVariant as BlendTagVariant,
 } from '@juspay/blend-design-system';
 import { 
   Search, Filter, ChevronDown, Check, X, Copy, 
@@ -2369,20 +2376,20 @@ export default function App() {
             <p className="text-sm text-zinc-500 mt-1">Manage, track, and approve procurement requests across your organization.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button 
+            <BlendButton
+              buttonType={BlendButtonType.SECONDARY}
+              size={BlendButtonSize.MEDIUM}
+              text="Export Data"
+              leadingIcon={<Download className="h-4 w-4" />}
               onClick={handleExport}
-              className="flex items-center gap-2 px-4 h-10 bg-white border border-zinc-200 rounded-xl text-sm font-semibold text-zinc-700 hover:bg-zinc-50 hover:border-zinc-300 transition-all shadow-sm"
-            >
-              <Download className="w-4 h-4 text-zinc-500" />
-              <span>Export Data</span>
-            </button>
-            <button 
+            />
+            <BlendButton
+              buttonType={BlendButtonType.PRIMARY}
+              size={BlendButtonSize.MEDIUM}
+              text="Create PR"
+              leadingIcon={<Plus className="h-4 w-4" />}
               onClick={() => setCurrentView('create-pr')}
-              className="flex items-center gap-2 px-5 h-10 bg-blue-600 rounded-xl text-sm font-semibold text-white hover:bg-blue-700 transition-all shadow-md shadow-blue-200 active:scale-95"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create PR</span>
-            </button>
+            />
           </div>
         </div>
 
@@ -2395,20 +2402,21 @@ export default function App() {
               <button
                 key={card.id}
                 onClick={() => setActiveFilter(card.id as FilterType)}
-                className={`text-left p-4 rounded-xl bg-white border transition-all flex flex-col gap-3
+                className={`text-left rounded-xl bg-white border transition-all p-3
                   ${isActive ? 'border-blue-200 shadow-md ring-1 ring-blue-100' : 'border-zinc-200 hover:border-zinc-300 shadow-sm'}
                 `}
               >
-                <div className="flex items-start justify-between">
-                  <div className={`p-2 rounded-lg ${card.bgColor}`}>
-                    <Icon className={`w-5 h-5 ${card.color}`} />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-[40px] leading-none font-bold text-zinc-900">{card.count}</h3>
-                  <p className="text-[13px] font-semibold text-zinc-500 mt-2 uppercase tracking-wider">{card.title}</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">{card.subtitle}</p>
-                </div>
+                <BlendStatCard
+                  title={card.title}
+                  value={card.count}
+                  subtitle={card.subtitle}
+                  variant={BlendStatCardVariant.NUMBER}
+                  titleIcon={
+                    <div className={`rounded-lg p-1.5 ${card.bgColor}`}>
+                      <Icon className={`h-4 w-4 ${card.color}`} />
+                    </div>
+                  }
+                />
               </button>
             );
           })}
@@ -2468,46 +2476,45 @@ export default function App() {
               {/* Toolbar */}
           <div className="p-4 border-b border-zinc-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white">
             <div className="flex items-center gap-3 flex-1">
-              <div className="relative max-w-md w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                <input 
+              <div className="max-w-md w-full">
+                <BlendSearchInput
                   ref={searchInputRef}
-                  type="text" 
-                  placeholder="Search PR number, vendor, or requester..." 
-                  className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  placeholder="Search PR number, vendor, or requester..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  allowClear
                 />
               </div>
               
               <div className="h-6 w-px bg-zinc-200 mx-1 hidden sm:block"></div>
               
-              <button 
-                onClick={() => setNeedMyAction(!needMyAction)}
-                className={`hidden sm:flex items-center h-10 gap-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                  needMyAction 
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                    : 'bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50'
-                }`}
-              >
-                <Bell className="w-4 h-4" />
-                Need My Action
-                <span className={`px-1.5 py-0.5 rounded-full text-xs ${needMyAction ? 'bg-blue-100 text-blue-700' : 'bg-zinc-100 text-zinc-600'}`}>
-                  3
-                </span>
-              </button>
+              <div className="hidden sm:flex items-center gap-2">
+                <BlendButton
+                  onClick={() => setNeedMyAction(!needMyAction)}
+                  buttonType={needMyAction ? BlendButtonType.PRIMARY : BlendButtonType.SECONDARY}
+                  size={BlendButtonSize.MEDIUM}
+                  text={`Need My Action`}
+                  leadingIcon={<Bell className="h-4 w-4" />}
+                />
+                <BlendTag
+                  text="3"
+                  color={needMyAction ? BlendTagColor.PRIMARY : BlendTagColor.NEUTRAL}
+                  variant={BlendTagVariant.SUBTLE}
+                  size={BlendTagSize.SM}
+                />
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
               <div className="relative">
-                <button 
+                <BlendButton
                   onClick={() => setShowPresetDropdown(!showPresetDropdown)}
-                  className="flex items-center h-10 gap-2 px-3 bg-white border border-zinc-200 rounded-lg text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-                >
-                  <Filter className="w-4 h-4 text-zinc-500" />
-                  View: {presetView}
-                  <ChevronDown className="w-4 h-4 text-zinc-400" />
-                </button>
+                  buttonType={BlendButtonType.SECONDARY}
+                  size={BlendButtonSize.MEDIUM}
+                  text={`View: ${presetView}`}
+                  leadingIcon={<Filter className="h-4 w-4" />}
+                  trailingIcon={<ChevronDown className="h-4 w-4" />}
+                />
                 {showPresetDropdown && (
                   <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-zinc-200 rounded-lg shadow-lg z-30 py-1">
                     {['Default', 'My Approvals', 'Overdue Items', 'Team View', 'All Columns', ...customViews.map(v => v.name)].map(preset => (
@@ -2522,18 +2529,20 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <button className="flex items-center gap-2 px-3 h-10 bg-white border border-zinc-200 rounded-lg text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors">
-                <Calendar className="w-4 h-4 text-zinc-500" />
-                Date
-                <ChevronDown className="w-4 h-4 text-zinc-400" />
-              </button>
-              <button 
+              <BlendButton
+                buttonType={BlendButtonType.SECONDARY}
+                size={BlendButtonSize.MEDIUM}
+                text="Date"
+                leadingIcon={<Calendar className="h-4 w-4" />}
+                trailingIcon={<ChevronDown className="h-4 w-4" />}
+              />
+              <BlendButton
                 onClick={() => setShowColSettings(!showColSettings)}
-                className="flex items-center justify-center w-10 h-10 bg-white border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 transition-colors"
+                buttonType={BlendButtonType.SECONDARY}
+                size={BlendButtonSize.MEDIUM}
+                leadingIcon={<Settings className="h-4 w-4" />}
                 title="Table Settings"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
+              />
             </div>
           </div>
 
@@ -2541,17 +2550,13 @@ export default function App() {
           {viewMode === 'table' && (
             <div className="px-4 py-2 bg-zinc-50/50 border-b border-zinc-200 flex items-center gap-2 overflow-x-auto shrink-0">
               {['My Approvals', 'Overdue', 'Due Today', 'High Priority'].map(filter => (
-                <button
+                <BlendButton
                   key={filter}
                   onClick={() => setSmartFilter(smartFilter === filter ? null : filter)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                    smartFilter === filter 
-                      ? 'bg-blue-100 text-blue-700 border border-blue-200' 
-                      : 'bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50'
-                  }`}
-                >
-                  {filter}
-                </button>
+                  buttonType={smartFilter === filter ? BlendButtonType.PRIMARY : BlendButtonType.SECONDARY}
+                  size={BlendButtonSize.SMALL}
+                  text={filter}
+                />
               ))}
             </div>
           )}
@@ -2564,24 +2569,24 @@ export default function App() {
               </span>
               <div className="w-px h-4 bg-blue-400"></div>
               <div className="flex items-center gap-2">
-                <button 
+                <BlendButton
                   onClick={() => handleBulkAction('approve')}
-                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-md text-sm font-medium text-white transition-colors whitespace-nowrap"
-                >
-                  Bulk Approve
-                </button>
-                <button 
+                  buttonType={BlendButtonType.SECONDARY}
+                  size={BlendButtonSize.SMALL}
+                  text="Bulk Approve"
+                />
+                <BlendButton
                   onClick={() => handleBulkAction('reject')}
-                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-md text-sm font-medium text-white transition-colors whitespace-nowrap"
-                >
-                  Bulk Reject
-                </button>
-                <button 
+                  buttonType={BlendButtonType.SECONDARY}
+                  size={BlendButtonSize.SMALL}
+                  text="Bulk Reject"
+                />
+                <BlendButton
                   onClick={handleExport}
-                  className="px-3 py-1.5 bg-white border border-white rounded-md text-sm font-medium text-blue-600 hover:bg-zinc-50 transition-colors shadow-sm whitespace-nowrap"
-                >
-                  Export Selected
-                </button>
+                  buttonType={BlendButtonType.SECONDARY}
+                  size={BlendButtonSize.SMALL}
+                  text="Export Selected"
+                />
               </div>
             </div>
           )}
@@ -2943,20 +2948,20 @@ export default function App() {
               Showing <span className="font-medium text-zinc-900">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredData.length)}</span> to <span className="font-medium text-zinc-900">{Math.min(currentPage * itemsPerPage, filteredData.length)}</span> of <span className="font-medium text-zinc-900">{filteredData.length}</span> results
             </span>
             <div className="flex items-center gap-2">
-              <button 
+              <BlendButton
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 border border-zinc-200 rounded-md text-sm font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Previous
-              </button>
-              <button 
+                buttonType={BlendButtonType.SECONDARY}
+                size={BlendButtonSize.SMALL}
+                text="Previous"
+              />
+              <BlendButton
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1.5 border border-zinc-200 rounded-md text-sm font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Next
-              </button>
+                buttonType={BlendButtonType.SECONDARY}
+                size={BlendButtonSize.SMALL}
+                text="Next"
+              />
             </div>
           </div>
         </motion.div>

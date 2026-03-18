@@ -1,22 +1,63 @@
-import React from 'react';
-import { useFormContext, useFieldArray } from 'react-hook-form';
-import { PRFormData, LineItem } from '../../../types/pr.types';
-import { Plus, Trash2, Package, Calculator, Info } from 'lucide-react';
-import { calculateItemTotal, formatCurrency, calculatePRSummary } from '../../../utils/calculations';
+import React, { useEffect } from 'react';
+import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
+import { PRFormData } from '../../../types/pr.types';
+import { Package, Plus, Trash2 } from 'lucide-react';
+import { calculateItemTotal, calculatePRSummary, formatCurrency } from '../../../utils/calculations';
+import {
+  Button as BlendButton,
+  ButtonSize as BlendButtonSize,
+  ButtonType as BlendButtonType,
+  SingleSelect as BlendSingleSelect,
+  TextArea as BlendTextArea,
+  TextInput as BlendTextInput,
+  TextInputSize as BlendTextInputSize,
+} from '@juspay/blend-design-system';
+
+const CATEGORY_ITEMS = [
+  {
+    items: [
+      { label: 'Software', value: 'Software' },
+      { label: 'Hardware', value: 'Hardware' },
+      { label: 'Services', value: 'Services' },
+      { label: 'Office Supplies', value: 'Office' },
+    ],
+  },
+];
+
+const UNIT_ITEMS = [
+  {
+    items: [
+      { label: 'Units', value: 'Units' },
+      { label: 'Hours', value: 'Hours' },
+      { label: 'Months', value: 'Months' },
+      { label: 'Licenses', value: 'Licenses' },
+    ],
+  },
+];
+
+const TAX_ITEMS = [
+  {
+    items: [0, 5, 12, 18, 28].map((rate) => ({ label: `${rate}%`, value: String(rate) })),
+  },
+];
 
 export const LineItemsStep: React.FC = () => {
-  const { register, control, watch, setValue, formState: { errors } } = useFormContext<PRFormData>();
+  const { control, watch, setValue, formState: { errors } } = useFormContext<PRFormData>();
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "items"
+    name: 'items',
   });
 
   const items = watch('items') || [];
   const summary = calculatePRSummary(items);
 
+  useEffect(() => {
+    setValue('totalAmount', summary.total, { shouldValidate: true });
+  }, [setValue, summary.total]);
+
   const addItem = () => {
     append({
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).slice(2, 11),
       productName: '',
       description: '',
       quantity: 1,
@@ -29,189 +70,239 @@ export const LineItemsStep: React.FC = () => {
     });
   };
 
-  const updateItemTotal = (index: number) => {
+  const recalculateItemTotal = (index: number) => {
     const item = items[index];
-    if (item) {
-      const total = calculateItemTotal(item.quantity, item.unitPrice, item.taxRate);
-      setValue(`items.${index}.total`, total);
-    }
+    if (!item) return;
+    const total = calculateItemTotal(Number(item.quantity) || 0, Number(item.unitPrice) || 0, Number(item.taxRate) || 0);
+    setValue(`items.${index}.total`, total, { shouldValidate: true });
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-bold text-zinc-900">Line Items</h3>
-          <p className="text-sm text-zinc-500 font-medium">Add the products or services you need to request.</p>
+          <h3 className="text-lg font-semibold text-zinc-900">Line Items</h3>
+          <p className="text-sm text-zinc-500">Add products or services to this request.</p>
         </div>
-        <button
-          type="button"
+        <BlendButton
           onClick={addItem}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95"
-        >
-          <Plus className="w-4 h-4" /> Add Item
-        </button>
+          buttonType={BlendButtonType.SECONDARY}
+          size={BlendButtonSize.SMALL}
+          text="Add Item"
+          leadingIcon={<Plus className="h-4 w-4" />}
+        />
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-5">
         {fields.map((field, index) => (
-          <div key={field.id} className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-            <div className="bg-zinc-50 px-6 py-3 border-b border-zinc-200 flex justify-between items-center">
+          <div key={field.id} className="rounded-2xl border border-zinc-200 bg-white">
+            <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/80 px-5 py-3">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-zinc-200 rounded-full flex items-center justify-center text-[10px] font-bold text-zinc-600">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">
                   {index + 1}
                 </div>
-                <span className="text-xs font-bold text-zinc-600 uppercase tracking-wider">Item Details</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Item Details</span>
               </div>
-              <button
-                type="button"
+              <BlendButton
                 onClick={() => remove(index)}
-                className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+                buttonType={BlendButtonType.SECONDARY}
+                size={BlendButtonSize.SMALL}
+                text="Remove"
+                leadingIcon={<Trash2 className="h-4 w-4" />}
+              />
             </div>
-            
-            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Product Name */}
-              <div className="md:col-span-2 space-y-2">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Product Name *</label>
-                <input
-                  {...register(`items.${index}.productName`)}
-                  placeholder="e.g., MacBook Pro 16-inch"
-                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
-                />
-              </div>
 
-              {/* Category */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Category *</label>
-                <select
-                  {...register(`items.${index}.category`)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
-                >
-                  <option value="Software">Software</option>
-                  <option value="Hardware">Hardware</option>
-                  <option value="Services">Services</option>
-                  <option value="Office">Office Supplies</option>
-                </select>
-              </div>
-
-              {/* Description */}
-              <div className="md:col-span-3 space-y-2">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Description *</label>
-                <textarea
-                  {...register(`items.${index}.description`)}
-                  rows={2}
-                  placeholder="Detailed specifications, model numbers, or service scope..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 resize-none"
-                />
-              </div>
-
-              {/* Quantity, Unit, Price */}
-              <div className="grid grid-cols-3 gap-4 md:col-span-2">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Qty *</label>
-                  <input
-                    type="number"
-                    {...register(`items.${index}.quantity`, { 
-                      valueAsNumber: true,
-                      onChange: () => updateItemTotal(index)
-                    })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Unit *</label>
-                  <select
-                    {...register(`items.${index}.unit`)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
-                  >
-                    <option value="Units">Units</option>
-                    <option value="Hours">Hours</option>
-                    <option value="Months">Months</option>
-                    <option value="Licenses">Licenses</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Unit Price *</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">$</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      {...register(`items.${index}.unitPrice`, { 
-                        valueAsNumber: true,
-                        onChange: () => updateItemTotal(index)
-                      })}
-                      className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-zinc-200 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
+            <div className="grid grid-cols-1 gap-5 p-5 md:grid-cols-3">
+              <Controller
+                name={`items.${index}.productName`}
+                control={control}
+                render={({ field: itemField }) => (
+                  <div className="md:col-span-2">
+                    <BlendTextInput
+                      value={itemField.value || ''}
+                      name={itemField.name}
+                      onChange={itemField.onChange}
+                      onBlur={itemField.onBlur}
+                      label="Product Name"
+                      required
+                      placeholder="e.g., MacBook Pro 16-inch"
+                      size={BlendTextInputSize.MEDIUM}
+                      error={Boolean(errors.items?.[index]?.productName)}
+                      errorMessage={errors.items?.[index]?.productName?.message as string}
                     />
                   </div>
-                </div>
+                )}
+              />
+
+              <Controller
+                name={`items.${index}.category`}
+                control={control}
+                render={({ field: itemField }) => (
+                  <BlendSingleSelect
+                    label="Category"
+                    required
+                    placeholder="Select category"
+                    items={CATEGORY_ITEMS}
+                    selected={itemField.value || ''}
+                    onSelect={(value) => itemField.onChange(value)}
+                    error={Boolean(errors.items?.[index]?.category)}
+                    errorMessage={errors.items?.[index]?.category?.message as string}
+                    fullWidth
+                  />
+                )}
+              />
+
+              <Controller
+                name={`items.${index}.description`}
+                control={control}
+                render={({ field: itemField }) => (
+                  <div className="md:col-span-3">
+                    <BlendTextArea
+                      value={itemField.value || ''}
+                      onChange={itemField.onChange}
+                      onBlur={itemField.onBlur}
+                      label="Description"
+                      required
+                      placeholder="Detailed specifications, model numbers, or service scope..."
+                      rows={3}
+                      error={Boolean(errors.items?.[index]?.description)}
+                      errorMessage={errors.items?.[index]?.description?.message as string}
+                    />
+                  </div>
+                )}
+              />
+
+              <div className="grid grid-cols-1 gap-4 md:col-span-2 md:grid-cols-3">
+                <Controller
+                  name={`items.${index}.quantity`}
+                  control={control}
+                  render={({ field: itemField }) => (
+                    <BlendTextInput
+                      value={String(itemField.value ?? 1)}
+                      name={itemField.name}
+                      onChange={(event) => {
+                        const parsed = Number(event.target.value || 0);
+                        itemField.onChange(Number.isNaN(parsed) ? 0 : parsed);
+                        queueMicrotask(() => recalculateItemTotal(index));
+                      }}
+                      onBlur={itemField.onBlur}
+                      type="number"
+                      label="Quantity"
+                      required
+                      size={BlendTextInputSize.MEDIUM}
+                      error={Boolean(errors.items?.[index]?.quantity)}
+                      errorMessage={errors.items?.[index]?.quantity?.message as string}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name={`items.${index}.unit`}
+                  control={control}
+                  render={({ field: itemField }) => (
+                    <BlendSingleSelect
+                      label="Unit"
+                      required
+                      placeholder="Select unit"
+                      items={UNIT_ITEMS}
+                      selected={itemField.value || ''}
+                      onSelect={(value) => itemField.onChange(value)}
+                      error={Boolean(errors.items?.[index]?.unit)}
+                      errorMessage={errors.items?.[index]?.unit?.message as string}
+                      fullWidth
+                    />
+                  )}
+                />
+
+                <Controller
+                  name={`items.${index}.unitPrice`}
+                  control={control}
+                  render={({ field: itemField }) => (
+                    <BlendTextInput
+                      value={String(itemField.value ?? 0)}
+                      name={itemField.name}
+                      onChange={(event) => {
+                        const parsed = Number(event.target.value || 0);
+                        itemField.onChange(Number.isNaN(parsed) ? 0 : parsed);
+                        queueMicrotask(() => recalculateItemTotal(index));
+                      }}
+                      onBlur={itemField.onBlur}
+                      type="number"
+                      label="Unit Price"
+                      required
+                      placeholder="0.00"
+                      size={BlendTextInputSize.MEDIUM}
+                      error={Boolean(errors.items?.[index]?.unitPrice)}
+                      errorMessage={errors.items?.[index]?.unitPrice?.message as string}
+                    />
+                  )}
+                />
               </div>
 
-              {/* Tax & Total */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Tax (GST) %</label>
-                  <select
-                    {...register(`items.${index}.taxRate`, { 
-                      valueAsNumber: true,
-                      onChange: () => updateItemTotal(index)
-                    })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
-                  >
-                    {[0, 5, 12, 18, 28].map(rate => (
-                      <option key={rate} value={rate}>{rate}%</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Item Total</label>
-                  <div className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 border border-zinc-100 text-zinc-900 font-bold">
-                    {formatCurrency(items[index]?.total || 0)}
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Controller
+                  name={`items.${index}.taxRate`}
+                  control={control}
+                  render={({ field: itemField }) => (
+                    <BlendSingleSelect
+                      label="Tax (GST)"
+                      placeholder="Select tax"
+                      items={TAX_ITEMS}
+                      selected={String(itemField.value ?? 0)}
+                      onSelect={(value) => {
+                        itemField.onChange(Number(value));
+                        queueMicrotask(() => recalculateItemTotal(index));
+                      }}
+                      fullWidth
+                    />
+                  )}
+                />
+
+                <BlendTextInput
+                  value={formatCurrency(items[index]?.total || 0)}
+                  onChange={() => undefined}
+                  label="Item Total"
+                  disabled
+                  size={BlendTextInputSize.MEDIUM}
+                />
               </div>
             </div>
           </div>
         ))}
 
         {fields.length === 0 && (
-          <div className="py-12 text-center border-2 border-dashed border-zinc-200 rounded-3xl bg-zinc-50">
-            <Package className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-            <h4 className="text-zinc-900 font-bold">No items added</h4>
-            <p className="text-sm text-zinc-500 font-medium mt-1">Click "Add Item" to start building your request.</p>
-            <button
-              type="button"
-              onClick={addItem}
-              className="mt-6 px-6 py-2 bg-white border border-zinc-200 rounded-xl text-sm font-bold text-zinc-700 hover:bg-zinc-100 transition-all shadow-sm"
-            >
-              Add First Item
-            </button>
+          <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center">
+            <Package className="mx-auto mb-3 h-10 w-10 text-zinc-300" />
+            <h4 className="text-base font-semibold text-zinc-900">No items added</h4>
+            <p className="mt-1 text-sm text-zinc-500">Add your first item to continue.</p>
+            <div className="mt-4">
+              <BlendButton
+                onClick={addItem}
+                buttonType={BlendButtonType.SECONDARY}
+                size={BlendButtonSize.SMALL}
+                text="Add First Item"
+                leadingIcon={<Plus className="h-4 w-4" />}
+              />
+            </div>
           </div>
         )}
       </div>
 
-      {/* Summary Card */}
       {fields.length > 0 && (
-        <div className="bg-zinc-900 rounded-3xl p-8 text-white shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <Calculator className="w-6 h-6 text-blue-400" />
-            <h3 className="text-lg font-bold uppercase tracking-wider">Request Summary</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Subtotal</p>
-              <p className="text-2xl font-bold">{formatCurrency(summary.subtotal)}</p>
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">Request Summary</h3>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <p className="text-xs font-medium text-zinc-500">Subtotal</p>
+              <p className="text-lg font-semibold text-zinc-900">{formatCurrency(summary.subtotal)}</p>
             </div>
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Tax Total</p>
-              <p className="text-2xl font-bold">{formatCurrency(summary.tax)}</p>
+            <div>
+              <p className="text-xs font-medium text-zinc-500">Tax</p>
+              <p className="text-lg font-semibold text-zinc-900">{formatCurrency(summary.tax)}</p>
             </div>
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Grand Total</p>
-              <p className="text-3xl font-bold text-blue-400">{formatCurrency(summary.total)}</p>
+            <div>
+              <p className="text-xs font-medium text-zinc-500">Total</p>
+              <p className="text-lg font-semibold text-blue-700">{formatCurrency(summary.total)}</p>
             </div>
           </div>
         </div>
