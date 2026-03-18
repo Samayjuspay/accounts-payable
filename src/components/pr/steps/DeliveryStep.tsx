@@ -3,11 +3,11 @@ import { Controller, useFormContext } from 'react-hook-form';
 import { PRFormData } from '../../../types/pr.types';
 import { MapPin, User, Phone, Mail, Truck, Package, ShieldCheck, Info } from 'lucide-react';
 import {
-  Button as BlendButton,
-  ButtonSize as BlendButtonSize,
-  ButtonType as BlendButtonType,
   Checkbox as BlendCheckbox,
   SingleSelect as BlendSingleSelect,
+  Tabs as BlendTabs,
+  TabsVariant as BlendTabsVariant,
+  TabsSize as BlendTabsSize,
   TextArea as BlendTextArea,
   TextInput as BlendTextInput,
   TextInputSize as BlendTextInputSize,
@@ -54,23 +54,23 @@ export const DeliveryStep: React.FC = () => {
           <p className="text-sm text-zinc-500 mt-1">Specify where the items should be delivered.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
+        <BlendTabs
+          variant={BlendTabsVariant.BOXED}
+          size={BlendTabsSize.MD}
+          value={delivery?.locationType || 'default'}
+          onValueChange={(value) => setLocationType(value as any)}
+          items={[
             { id: 'default', label: 'Use Default', icon: MapPin, desc: 'Company HQ' },
             { id: 'saved', label: 'Saved Address', icon: Package, desc: 'Select from list' },
             { id: 'new', label: 'Add New', icon: Truck, desc: 'Custom location' },
-          ].map((option) => (
-            <BlendButton
-              key={option.id}
-              onClick={() => setLocationType(option.id as any)}
-              buttonType={delivery?.locationType === option.id ? BlendButtonType.PRIMARY : BlendButtonType.SECONDARY}
-              size={BlendButtonSize.SMALL}
-              text={option.label}
-              leadingIcon={<option.icon className="h-4 w-4" />}
-              fullWidth
-            />
-          ))}
-        </div>
+          ].map((option) => ({
+            value: option.id,
+            label: option.label,
+            content: null,
+            leftSlot: <option.icon className="h-4 w-4" />,
+          }))}
+          fitContent
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">

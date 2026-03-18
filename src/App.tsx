@@ -14,6 +14,7 @@ import {
   SearchInput as BlendSearchInput,
   StatCard as BlendStatCard,
   StatCardVariant as BlendStatCardVariant,
+  Switch as BlendSwitch,
   Tag as BlendTag,
   TagColor as BlendTagColor,
   TagSize as BlendTagSize,
@@ -2489,18 +2490,16 @@ export default function App() {
               <div className="h-6 w-px bg-zinc-200 mx-1 hidden sm:block"></div>
               
               <div className="hidden sm:flex items-center gap-2">
-                <BlendButton
-                  onClick={() => setNeedMyAction(!needMyAction)}
-                  buttonType={needMyAction ? BlendButtonType.PRIMARY : BlendButtonType.SECONDARY}
-                  size={BlendButtonSize.MEDIUM}
-                  text={`Need My Action`}
-                  leadingIcon={<Bell className="h-4 w-4" />}
+                <BlendSwitch
+                  checked={needMyAction}
+                  onChange={() => setNeedMyAction(!needMyAction)}
+                  label="Need My Action"
                 />
                 <BlendTag
                   text="3"
                   color={needMyAction ? BlendTagColor.PRIMARY : BlendTagColor.NEUTRAL}
                   variant={BlendTagVariant.SUBTLE}
-                  size={BlendTagSize.SM}
+                  size={BlendTagSize.XS}
                 />
               </div>
             </div>

@@ -9,7 +9,11 @@ import {
   ButtonType as BlendButtonType,
   Checkbox as BlendCheckbox,
   SingleSelect as BlendSingleSelect,
+  Tabs as BlendTabs,
+  TabsVariant as BlendTabsVariant,
+  TabsSize as BlendTabsSize,
 } from '@juspay/blend-design-system';
+import { SmartVendorField } from '../../smart-form/SmartVendorField';
 
 const VENDOR_ITEMS = [
   {
@@ -25,6 +29,7 @@ export const VendorStep: React.FC = () => {
   const { watch, setValue } = useFormContext<PRFormData>();
   const vendorSelection = watch('vendorSelection');
   const category = watch('category');
+  const department = watch('department');
 
   const selectedVendor = MOCK_VENDORS.find(v => v.id === vendorSelection.selectedVendorId);
   const recommendedVendors = MOCK_VENDORS.filter(v => v.category === category);
@@ -33,6 +38,10 @@ export const VendorStep: React.FC = () => {
     setValue('vendorSelection.mode', mode);
     if (mode !== 'existing') setValue('vendorSelection.selectedVendorId', undefined);
     if (mode !== 'rfq') setValue('vendorSelection.rfqVendorIds', []);
+  };
+
+  const handleVendorChange = (vendorId: string) => {
+    setValue('vendorSelection.selectedVendorId', vendorId);
   };
 
   const toggleRFQVendor = (vendorId: string) => {
@@ -51,36 +60,33 @@ export const VendorStep: React.FC = () => {
         <p className="text-sm text-zinc-500 mt-1">Choose how you want to source the items for this request.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
+      <BlendTabs
+        variant={BlendTabsVariant.BOXED}
+        size={BlendTabsSize.MD}
+        value={vendorSelection.mode || 'existing'}
+        onValueChange={(value) => handleModeChange(value as any)}
+        items={[
           { id: 'existing', label: 'Existing Vendor', icon: Search, desc: 'Select from approved list' },
           { id: 'rfq', label: 'Request Quotes', icon: Users, desc: 'Compare up to 5 vendors' },
           { id: 'new', label: 'Add New Vendor', icon: Plus, desc: 'Onboard a new supplier' },
           { id: 'none', label: 'No Vendor Yet', icon: Info, desc: 'Decide later in process' },
-        ].map((option) => (
-          <BlendButton
-            key={option.id}
-            onClick={() => handleModeChange(option.id as any)}
-            buttonType={vendorSelection.mode === option.id ? BlendButtonType.PRIMARY : BlendButtonType.SECONDARY}
-            size={BlendButtonSize.SMALL}
-            text={option.label}
-            leadingIcon={<option.icon className="h-4 w-4" />}
-            fullWidth
-          />
-        ))}
-      </div>
+        ].map((option) => ({
+          value: option.id,
+          label: option.label,
+          content: null,
+          leftSlot: <option.icon className="h-4 w-4" />,
+        }))}
+        fitContent
+      />
       <p className="text-xs text-zinc-500 -mt-4">Tip: use RFQ mode to compare up to 5 vendors before finalizing.</p>
 
       {vendorSelection.mode === 'existing' && (
         <div className="space-y-6">
-          <BlendSingleSelect
-            label="Select Vendor"
-            required
-            placeholder="Choose a vendor..."
-            items={VENDOR_ITEMS}
-            selected={vendorSelection.selectedVendorId || ''}
-            onSelect={(value) => setValue('vendorSelection.selectedVendorId', value)}
-            fullWidth
+          <SmartVendorField
+            category={category}
+            department={department}
+            value={vendorSelection.selectedVendorId}
+            onChange={handleVendorChange}
           />
 
           {recommendedVendors.length > 0 && !vendorSelection.selectedVendorId && (

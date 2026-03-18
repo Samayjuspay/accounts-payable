@@ -9,6 +9,7 @@ import {
   ButtonType as BlendButtonType,
   ButtonSize as BlendButtonSize,
 } from '@juspay/blend-design-system';
+import { SmartBudgetField } from '../../smart-form/SmartBudgetField';
 
 const toSelectGroups = (budgets: Budget[]) => [
   {
@@ -30,6 +31,9 @@ export const BudgetStep: React.FC = () => {
   const otherBudgets = MOCK_BUDGETS.filter(b => b.department !== department);
 
   const isOverBudget = selectedBudget && totalAmount > selectedBudget.availableBalance;
+
+  // Get line items for budget prediction
+  const lineItems = watch('items') || [];
 
   // Auto-detect approval chain based on amount
   useEffect(() => {
@@ -92,6 +96,19 @@ export const BudgetStep: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Smart Budget Field with AI Prediction */}
+        <SmartBudgetField
+          items={lineItems.map(item => ({
+            name: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+          }))}
+          category={watch('category')}
+          department={department}
+          value={totalAmount}
+          onChange={(value) => setValue('totalAmount', value)}
+        />
 
         <div className="space-y-3">
           <BlendSingleSelect
