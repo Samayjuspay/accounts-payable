@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { PRFormData, Vendor } from '../../../types/pr.types';
 import { MOCK_VENDORS } from '../../../constants/mockData';
-import { Star, MapPin, Phone, Mail, Clock, CreditCard, Search, Plus, Users, Info } from 'lucide-react';
+import { Star, MapPin, Phone, Mail, Clock, CreditCard, Search, Plus, Users, Info, Sparkles } from 'lucide-react';
 import {
   Button as BlendButton,
   ButtonSize as BlendButtonSize,
@@ -14,6 +14,7 @@ import {
   TabsSize as BlendTabsSize,
 } from '@juspay/blend-design-system';
 import { SmartVendorField } from '../../smart-form/SmartVendorField';
+import { toast } from 'sonner';
 
 const VENDOR_ITEMS = [
   {
@@ -30,9 +31,55 @@ export const VendorStep: React.FC = () => {
   const vendorSelection = watch('vendorSelection');
   const category = watch('category');
   const department = watch('department');
+  const [aiApplied, setAiApplied] = useState(false);
 
   const selectedVendor = MOCK_VENDORS.find(v => v.id === vendorSelection.selectedVendorId);
   const recommendedVendors = MOCK_VENDORS.filter(v => v.category === category);
+
+  // Check for AI-predicted vendors
+  useEffect(() => {
+    const aiPredictedVendors = vendorSelection?.aiPredictedVendors as string[] | undefined;
+    const aiRecommendedVendor = vendorSelection?.aiRecommendedVendor as string | undefined;
+    
+    if (aiPredictedVendors && aiPredictedVendors.length > 0 && !aiApplied) {
+      // Set vendor mode based on number of predicted vendors
+      const mode = aiPredictedVendors.length > 1 ? 'rfq' : 'existing';
+      setValue('vendorSelection.mode', mode);
+      
+      // For single vendor, select it
+      if (mode === 'existing' && aiPredictedVendors[0]) {
+        const vendor = MOCK_VENDORS.find(v => 
+          aiPredictedVendors[0].toLowerCase().includes(v.name.toLowerCase()) ||
+          v.name.toLowerCase().includes(aiPredictedVendors[0].toLowerCase())
+        );
+        if (vendor) {
+          setValue('vendorSelection.selectedVendorId', vendor.id);
+        }
+      }
+      
+      // For RFQ mode, set the RFQ vendor IDs
+      if (mode === 'rfq') {
+        const vendorIds = aiPredictedVendors
+          .map(name => {
+            const vendor = MOCK_VENDORS.find(v => 
+              name.toLowerCase().includes(v.name.toLowerCase()) ||
+              v.name.toLowerCase().includes(name.toLowerCase())
+            );
+            return vendor?.id;
+          })
+          .filter((id): id is string => id !== undefined);
+        
+        setValue('vendorSelection.rfqVendorIds', vendorIds);
+      }
+      
+      setAiApplied(true);
+      
+      // Show notification
+      toast.success(`${aiPredictedVendors.length} vendor${aiPredictedVendors.length > 1 ? 's' : ''} auto-selected by AI`, {
+        description: aiRecommendedVendor ? `Recommended: ${aiRecommendedVendor}` : 'Based on previous purchases',
+      });
+    }
+  }, [vendorSelection?.aiPredictedVendors, vendorSelection?.aiRecommendedVendor, aiApplied, setValue]);
 
   const handleModeChange = (mode: 'existing' | 'rfq' | 'new' | 'none') => {
     setValue('vendorSelection.mode', mode);
@@ -51,6 +98,16 @@ export const VendorStep: React.FC = () => {
     } else if (current.length < 5) {
       setValue('vendorSelection.rfqVendorIds', [...current, vendorId]);
     }
+  };
+
+  const isAIVendor = (vendorId: string) => {
+    const aiPredictedVendors = vendorSelection?.aiPredictedVendors as string[] | undefined;
+    if (!aiPredictedVendors) return false;
+    const vendor = MOCK_VENDORS.find(v => v.id === vendorId);
+    return vendor && aiPredictedVendors.some(name => 
+      name.toLowerCase().includes(vendor.name.toLowerCase()) ||
+      vendor.name.toLowerCase().includes(name.toLowerCase())
+    );
   };
 
   return (
@@ -78,6 +135,22 @@ export const VendorStep: React.FC = () => {
         }))}
         fitContent
       />
+      
+      {/* RFQ Count Badge */}
+      {vendorSelection.mode === 'rfq' && (
+        <div className="flex items-center gap-2 -mt-2">
+          <span className={`text-sm font-medium ${(vendorSelection.rfqVendorIds?.length || 0) > 0 ? 'text-blue-600' : 'text-zinc-500'}`}>
+            {vendorSelection.rfqVendorIds?.length || 0} RFQ Vendors Selected
+          </span>
+          {(vendorSelection.rfqVendorIds?.length || 0) > 0 && (
+            <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+              <Sparkles className="w-3 h-3" />
+              AI Selected
+            </span>
+          )}
+        </div>
+      )}
+      
       <p className="text-xs text-zinc-500 -mt-4">Tip: use RFQ mode to compare up to 5 vendors before finalizing.</p>
 
       {vendorSelection.mode === 'existing' && (
@@ -110,7 +183,7 @@ export const VendorStep: React.FC = () => {
           )}
 
           {selectedVendor && (
-            <VendorCard vendor={selectedVendor} />
+            <VendorCard vendor={selectedVendor} isAIRecommended={isAIVendor(selectedVendor.id)} />
           )}
         </div>
       )}
@@ -118,11 +191,20 @@ export const VendorStep: React.FC = () => {
       {vendorSelection.mode === 'rfq' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Select Vendors for RFQ ({vendorSelection.rfqVendorIds?.length || 0}/5)</label>
+            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+              Select Vendors for RFQ ({vendorSelection.rfqVendorIds?.length || 0}/5)
+            </label>
+            {(vendorSelection.rfqVendorIds?.length || 0) > 0 && (
+              <span className="inline-flex items-center gap-1 text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white px-2 py-1 rounded-full">
+                <Sparkles className="w-3 h-3" />
+                AI Recommended
+              </span>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {MOCK_VENDORS.map(v => {
               const isSelected = vendorSelection.rfqVendorIds?.includes(v.id);
+              const isAIRecommended = isAIVendor(v.id);
               return (
                 <div
                   key={v.id}
@@ -130,17 +212,25 @@ export const VendorStep: React.FC = () => {
                     isSelected
                       ? 'border-blue-300 bg-blue-50/50'
                       : 'border-zinc-200 bg-white hover:border-zinc-300'
-                  }`}
+                  } ${isAIRecommended ? 'ring-1 ring-blue-200' : ''}`}
                 >
                   <BlendCheckbox
                     checked={Boolean(isSelected)}
                     onCheckedChange={() => toggleRFQVendor(v.id)}
                   />
-                  <div>
-                    <div className="text-sm font-semibold text-zinc-900">{v.name}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-zinc-900">{v.name}</span>
+                      {isAIRecommended && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                          <Sparkles className="w-3 h-3" />
+                          AI
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[10px] text-zinc-500 font-medium">{v.location}</div>
                   </div>
-                  <div className="ml-auto flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                     <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
                     <span className="text-xs font-semibold text-zinc-700">{v.rating}</span>
                   </div>
@@ -171,11 +261,19 @@ export const VendorStep: React.FC = () => {
   );
 };
 
-const VendorCard: React.FC<{ vendor: Vendor }> = ({ vendor }) => (
-  <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
-    <div className="p-6 bg-zinc-50/50 border-b border-zinc-100 flex justify-between items-start">
+const VendorCard: React.FC<{ vendor: Vendor; isAIRecommended?: boolean }> = ({ vendor, isAIRecommended }) => (
+  <div className={`bg-white border rounded-2xl overflow-hidden shadow-sm ${isAIRecommended ? 'border-blue-300 ring-2 ring-blue-100' : 'border-zinc-200'}`}>
+    <div className={`p-6 border-b border-zinc-100 flex justify-between items-start ${isAIRecommended ? 'bg-blue-50/50' : 'bg-zinc-50/50'}`}>
       <div>
-        <h3 className="text-lg font-semibold text-zinc-900">{vendor.name}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-zinc-900">{vendor.name}</h3>
+          {isAIRecommended && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium bg-gradient-to-r from-blue-500 to-purple-500 text-white px-2 py-0.5 rounded-full">
+              <Sparkles className="w-3 h-3" />
+              AI Recommended
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2 mt-1">
           <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 rounded-lg">
             <Star className="w-3 h-3 text-amber-500 fill-amber-500" />

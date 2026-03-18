@@ -68,6 +68,9 @@ export const BasicInfoStep: React.FC = () => {
   };
 
   const handleFullPredictionApply = (predictions: FullFormPredictions, reviewMode: boolean) => {
+    // Store predictions globally for other steps to access
+    (window as unknown as { __aiFullPredictions?: FullFormPredictions }).__aiFullPredictions = predictions;
+
     // Apply basic info
     if (predictions.basicInfo.title) {
       setValue('title', predictions.basicInfo.title, { shouldValidate: true });
@@ -85,39 +88,19 @@ export const BasicInfoStep: React.FC = () => {
       setValue('businessJustification', predictions.basicInfo.justification, { shouldValidate: true });
     }
 
-    // Apply items if available
-    if (predictions.items && predictions.items.length > 0) {
-      const lineItems = predictions.items.map((item, index) => ({
-        id: `ai-${Date.now()}-${index}`,
-        productName: item.name,
-        description: item.description,
-        quantity: item.quantity,
-        unit: item.unit,
-        unitPrice: item.unitPrice,
-        taxRate: 18, // Default GST
-        total: item.total,
-        specifications: item.specifications,
-        category: predictions.basicInfo.category,
-        expectedDelivery: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 14 days from now
-        _aiGenerated: true,
-        _sourcePR: item.source,
-      }));
-      setValue('items', lineItems, { shouldValidate: true });
-      
-      // Calculate and set total amount
-      const totalAmount = predictions.items.reduce((sum, item) => sum + item.total, 0);
-      setValue('totalAmount', totalAmount);
-    }
-
     // Apply vendor info
     if (predictions.vendor.recommendedVendor) {
       setValue('vendorSelection.mode', predictions.vendor.rfqMode ? 'rfq' : 'existing');
-      // Note: In real implementation, you'd map vendor name to ID
+      // Store vendor info for VendorStep to use
+      setValue('vendorSelection.aiPredictedVendors', predictions.vendor.selectedVendors);
+      setValue('vendorSelection.aiRecommendedVendor', predictions.vendor.recommendedVendor);
     }
 
     // Apply budget info
     if (predictions.budget.estimatedTotal > 0) {
       setValue('totalAmount', predictions.budget.breakdown.grandTotal);
+      setValue('budget.aiBudgetSource', predictions.budget.budgetSource);
+      setValue('budget.aiCostCenter', predictions.budget.costCenter);
     }
 
     // Apply delivery info
@@ -130,6 +113,8 @@ export const BasicInfoStep: React.FC = () => {
       setValue('delivery.shippingMethod', predictions.delivery.shippingMethod as 'Standard' | 'Express' | 'Next day');
       setValue('delivery.installationRequired', predictions.delivery.installationRequired);
       setValue('delivery.instructions', predictions.delivery.specialInstructions);
+      // Store full delivery info for DeliveryStep
+      setValue('delivery.aiPredictedDelivery', predictions.delivery);
     }
 
     // Count applied fields
@@ -154,8 +139,6 @@ export const BasicInfoStep: React.FC = () => {
 
     // If not in review mode, jump to review step
     if (!reviewMode) {
-      // This would need to be passed from parent or use a context
-      // For now, just show a toast
       toast.info('Navigate to Review step to see all filled data');
     }
   };

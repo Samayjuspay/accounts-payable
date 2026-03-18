@@ -15,11 +15,14 @@ import { usePRForm } from '../hooks/usePRForm';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { PRFormData } from '../types/pr.types';
 import { ArrowRight, ArrowLeft, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Button as BlendButton,
   ButtonSize as BlendButtonSize,
   ButtonType as BlendButtonType,
 } from '@juspay/blend-design-system';
+import QuoteUploadWidget from '../components/documentParsing/QuoteUploadWidget';
+import ExtractionPreviewModal from '../components/documentParsing/ExtractionPreviewModal';
 
 interface CreatePRPageProps {
   onBack: () => void;
@@ -30,6 +33,10 @@ export const CreatePRPage: React.FC<CreatePRPageProps> = ({ onBack, onSubmitForA
   const [currentStep, setCurrentStep] = useState(1);
   const [previewData, setPreviewData] = useState<PRFormData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showExtractionModal, setShowExtractionModal] = useState(false);
+  const [extractedData, setExtractedData] = useState<any>(null);
+  const [fileUrl, setFileUrl] = useState<string>('');
+  const [fileName, setFileName] = useState<string>('');
   const previewPanelRef = useRef<HTMLDivElement>(null);
 
   // Initialize form
@@ -120,6 +127,81 @@ export const CreatePRPage: React.FC<CreatePRPageProps> = ({ onBack, onSubmitForA
     }
   });
 
+  const handleFileProcessed = (data, url, name) => {
+    setExtractedData(data);
+    setFileUrl(url);
+    setFileName(name);
+    setShowExtractionModal(true);
+  };
+
+  const applyExtractedData = (data) => {
+    const currentData = getValues();
+    
+    setValue('title', data.vendor.name);
+    setValue('businessJustification', `Quote from ${data.vendor.name} - ${data.quoteNumber}`);
+    setValue('requiredByDate', data.validUntil);
+    
+    setValue('items', data.items.map(item => ({
+      name: item.name,
+      description: item.description || '',
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      total: item.total
+    })));
+    
+    setValue('vendorSelection', {
+      mode: 'rfq',
+      selectedVendorId: undefined,
+      rfqVendorIds: [data.vendor.name]
+    });
+    
+    setValue('budget', {
+      id: 'BUDGET-001',
+      name: 'Operating Budget',
+      department: data.department || 'IT',
+      availableBalance: data.total,
+      totalBudget: data.total * 1.2,
+      currency: 'INR'
+    });
+    
+    setValue('delivery', {
+      locationType: 'new',
+      address: {
+        street: '',
+        city: '',
+        state: '',
+        zip: '',
+        country: 'India'
+      },
+      contact: {
+        name: data.vendor.contactPerson,
+        email: data.vendor.email,
+        phone: data.vendor.phone
+      },
+      instructions: data.specialNotes,
+      shippingMethod: 'Standard',
+      installationRequired: false,
+      trainingRequired: false
+    });
+    
+    setValue('attachments', [
+      ...currentData.attachments,
+      {
+        id: `att-${Date.now()}`,
+        name: fileName,
+        url: fileUrl,
+        type: 'vendor_quote',
+        uploadedAt: new Date().toISOString(),
+        size: 0,
+        category: 'Vendor Quote'
+      }
+    ]);
+    
+    setShowExtractionModal(false);
+    toast.success('Quote imported successfully!');
+    setCurrentStep(1);
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -152,6 +234,8 @@ export const CreatePRPage: React.FC<CreatePRPageProps> = ({ onBack, onSubmitForA
         isSubmitting={isSubmitting}
       >
         <div className="space-y-12">
+          <QuoteUploadWidget onFileProcessed={handleFileProcessed} />
+          
           {renderStep()}
 
           {/* Navigation Buttons */}
@@ -186,6 +270,13 @@ export const CreatePRPage: React.FC<CreatePRPageProps> = ({ onBack, onSubmitForA
           </div>
         </div>
       </PRLayout>
+      
+      <ExtractionPreviewModal
+        isOpen={showExtractionModal}
+        onClose={() => setShowExtractionModal(false)}
+        extractedData={extractedData}
+        onApply={applyExtractedData}
+      />
     </FormProvider>
   );
 };

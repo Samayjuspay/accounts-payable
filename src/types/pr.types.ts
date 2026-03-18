@@ -13,6 +13,10 @@ export interface LineItem {
   sku?: string;
   category: string;
   expectedDelivery: string;
+  // AI metadata
+  _aiGenerated?: boolean;
+  _sourcePR?: string;
+  _confidence?: number;
 }
 
 export interface Vendor {
@@ -34,6 +38,9 @@ export interface Budget {
   availableBalance: number;
   totalBudget: number;
   currency: string;
+  // AI metadata
+  aiBudgetSource?: string;
+  aiCostCenter?: string;
 }
 
 export interface Address {
@@ -43,6 +50,17 @@ export interface Address {
   state: string;
   zip: string;
   country: string;
+}
+
+export interface AIPredictedDelivery {
+  address: string;
+  contactPerson: string;
+  contactPhone: string;
+  shippingMethod: string;
+  installationRequired: boolean;
+  specialInstructions: string;
+  source: string;
+  confidence: number;
 }
 
 export interface Delivery {
@@ -57,6 +75,8 @@ export interface Delivery {
   shippingMethod: 'Standard' | 'Express' | 'Next day';
   installationRequired: boolean;
   trainingRequired: boolean;
+  // AI metadata
+  aiPredictedDelivery?: AIPredictedDelivery;
 }
 
 export interface Attachment {
@@ -96,6 +116,9 @@ export interface PurchaseRequest {
     selectedVendorId?: string;
     rfqVendorIds?: string[];
     newVendorData?: Partial<Vendor>;
+    // AI metadata
+    aiPredictedVendors?: string[];
+    aiRecommendedVendor?: string;
   };
   budget?: Budget;
   delivery?: Delivery;

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { debounce } from 'lodash';
+import debounce from 'lodash.debounce';
 import { predictFields, predictFullForm } from '../services/aiService';
 import { FullFormPredictions } from '../types/ai-predictions.types';
 

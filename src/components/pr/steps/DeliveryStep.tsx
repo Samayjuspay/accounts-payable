@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 import { PRFormData } from '../../../types/pr.types';
-import { MapPin, User, Phone, Mail, Truck, Package, ShieldCheck, Info } from 'lucide-react';
+import { MapPin, User, Phone, Mail, Truck, Package, ShieldCheck, Info, Sparkles } from 'lucide-react';
 import {
   Checkbox as BlendCheckbox,
   SingleSelect as BlendSingleSelect,
@@ -12,6 +12,7 @@ import {
   TextInput as BlendTextInput,
   TextInputSize as BlendTextInputSize,
 } from '@juspay/blend-design-system';
+import { toast } from 'sonner';
 
 const SHIPPING_METHOD_ITEMS = [
   {
@@ -23,9 +24,81 @@ const SHIPPING_METHOD_ITEMS = [
   },
 ];
 
+interface AIPredictedDelivery {
+  address: string;
+  contactPerson: string;
+  contactPhone: string;
+  shippingMethod: string;
+  installationRequired: boolean;
+  specialInstructions: string;
+  source: string;
+  confidence: number;
+}
+
 export const DeliveryStep: React.FC = () => {
   const { watch, setValue, control } = useFormContext<PRFormData>();
   const delivery = watch('delivery');
+  const [aiApplied, setAiApplied] = useState(false);
+
+  // Check for AI-predicted delivery info
+  useEffect(() => {
+    const aiPredictedDelivery = delivery?.aiPredictedDelivery as AIPredictedDelivery | undefined;
+    
+    if (aiPredictedDelivery && !aiApplied) {
+      // Parse address (simple parsing)
+      const addressParts = aiPredictedDelivery.address.split(',').map(s => s.trim());
+      
+      // Set location type to 'new' since AI provided a custom address
+      setValue('delivery.locationType', 'new');
+      
+      // Fill address fields
+      if (addressParts.length > 0) {
+        setValue('delivery.address.building', addressParts[0] || '');
+      }
+      if (addressParts.length > 1) {
+        setValue('delivery.address.street', addressParts.slice(1, -2).join(', ') || addressParts[1] || '');
+      }
+      
+      // Try to extract city, state, zip from last parts
+      const lastPart = addressParts[addressParts.length - 1] || '';
+      const zipMatch = lastPart.match(/(\d{6})/);
+      if (zipMatch) {
+        setValue('delivery.address.zip', zipMatch[1]);
+        const cityState = lastPart.replace(/-\s*\d{6}/, '').trim();
+        const cityStateParts = cityState.split(' ');
+        if (cityStateParts.length > 1) {
+          setValue('delivery.address.city', cityStateParts.slice(0, -1).join(' '));
+          setValue('delivery.address.state', cityStateParts[cityStateParts.length - 1]);
+        } else {
+          setValue('delivery.address.city', cityState);
+        }
+      } else {
+        setValue('delivery.address.city', lastPart);
+      }
+      
+      setValue('delivery.address.country', 'India');
+      
+      // Fill contact info
+      setValue('delivery.contact.name', aiPredictedDelivery.contactPerson || '');
+      setValue('delivery.contact.phone', aiPredictedDelivery.contactPhone || '');
+      setValue('delivery.contact.email', `${aiPredictedDelivery.contactPerson?.toLowerCase().replace(' ', '.')}@company.com` || '');
+      
+      // Fill shipping method
+      setValue('delivery.shippingMethod', aiPredictedDelivery.shippingMethod as 'Standard' | 'Express' | 'Next day');
+      
+      // Fill requirements
+      setValue('delivery.installationRequired', aiPredictedDelivery.installationRequired);
+      setValue('delivery.instructions', aiPredictedDelivery.specialInstructions || '');
+      
+      setAiApplied(true);
+      
+      // Show notification
+      toast.success('Delivery address auto-filled by AI', {
+        description: aiPredictedDelivery.source || 'Based on location in title',
+        icon: <Sparkles className="w-4 h-4" />,
+      });
+    }
+  }, [delivery?.aiPredictedDelivery, aiApplied, setValue]);
 
   const setLocationType = (type: 'default' | 'saved' | 'new') => {
     setValue('delivery.locationType', type);
@@ -45,6 +118,8 @@ export const DeliveryStep: React.FC = () => {
       });
     }
   };
+
+  const isAIFilled = aiApplied || delivery?.aiPredictedDelivery;
 
   return (
     <div className="space-y-10">
@@ -71,6 +146,18 @@ export const DeliveryStep: React.FC = () => {
           }))}
           fitContent
         />
+
+        {isAIFilled && delivery?.locationType === 'new' && (
+          <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <Sparkles className="w-4 h-4 text-blue-600" />
+            <span className="text-sm text-blue-800">
+              Address auto-filled from AI prediction
+            </span>
+            <span className="text-xs text-blue-600 ml-auto">
+              {(delivery?.aiPredictedDelivery as AIPredictedDelivery | undefined)?.source || 'Based on location in title'}
+            </span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">

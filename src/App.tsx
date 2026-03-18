@@ -5,6 +5,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Toaster, toast } from 'sonner';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { CreatePRPage } from './pages/CreatePRPage';
 import Fuse from 'fuse.js';
 import {
@@ -1237,7 +1238,7 @@ const MetadataItem = ({ icon: Icon, label, value, color }: { icon: any, label: s
   </div>
 );
 
-export default function App() {
+function App() {
   const [prData, setPrData] = useState<PurchaseRequest[]>(MOCK_DATA);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -1280,8 +1281,11 @@ export default function App() {
   const [expandedTicketId, setExpandedTicketId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'create-pr'>('dashboard');
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
+  
+  // React Router navigation
+  const navigate = useNavigate();
+  const location = useLocation();
   const [newlyInsertedRowId, setNewlyInsertedRowId] = useState<string | null>(null);
   const [ticketFlight, setTicketFlight] = useState<TicketFlightState | null>(null);
   
@@ -1460,7 +1464,7 @@ export default function App() {
   }, [newlyInsertedRowId]);
 
   useEffect(() => {
-    if (!ticketFlight || ticketFlight.endRect || currentView !== 'dashboard' || viewMode !== 'table') return;
+    if (!ticketFlight || ticketFlight.endRect || location.pathname !== '/' || viewMode !== 'table') return;
 
     let raf = 0;
     let attempts = 0;
@@ -1492,7 +1496,7 @@ export default function App() {
 
     raf = window.requestAnimationFrame(resolveTarget);
     return () => window.cancelAnimationFrame(raf);
-  }, [currentView, ticketFlight, viewMode]);
+  }, [location.pathname, ticketFlight, viewMode]);
 
   useEffect(() => {
     if (!ticketFlight?.endRect) return;
@@ -1832,7 +1836,7 @@ export default function App() {
 
     setViewMode('table');
     setCurrentPage(1);
-    setCurrentView('dashboard');
+    navigate('/');
     setTicketFlight({
       pr: newPR,
       title: data.title || `${newPR.vendors[0]} procurement request`,
@@ -2197,18 +2201,6 @@ export default function App() {
 
   const mainMarginLeft = isMobile ? 0 : (isSidebarCollapsed ? 64 : (isTablet ? 64 : 280));
 
-  if (currentView === 'create-pr') {
-    return (
-      <>
-        <CreatePRPage
-          onBack={() => setCurrentView('dashboard')}
-          onSubmitForApproval={handleCreatePRFromForm}
-        />
-        <Toaster position="top-right" richColors />
-      </>
-    );
-  }
-
   return (
     <div className="h-screen bg-zinc-50 font-sans text-zinc-900 flex overflow-hidden">
       <Toaster position="top-right" />
@@ -2312,6 +2304,15 @@ export default function App() {
             isAIChatOpen && !isMobile ? 'max-w-none' : 'max-w-[1600px] mx-auto'
           }`}
         >
+        <Routes>
+          <Route path="/createPR" element={
+            <CreatePRPage
+              onBack={() => navigate('/')}
+              onSubmitForApproval={handleCreatePRFromForm}
+            />
+          } />
+          <Route path="/" element={
+            <>
         <AnimatePresence>
           {ticketFlight && ticketFlight.endRect && (
             <motion.div
@@ -2389,7 +2390,7 @@ export default function App() {
               size={BlendButtonSize.MEDIUM}
               text="Create PR"
               leadingIcon={<Plus className="h-4 w-4" />}
-              onClick={() => setCurrentView('create-pr')}
+              onClick={() => navigate('/createPR')}
             />
           </div>
         </div>
@@ -2545,20 +2546,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Smart Filters */}
-          {viewMode === 'table' && (
-            <div className="px-4 py-2 bg-zinc-50/50 border-b border-zinc-200 flex items-center gap-2 overflow-x-auto shrink-0">
-              {['My Approvals', 'Overdue', 'Due Today', 'High Priority'].map(filter => (
-                <BlendButton
-                  key={filter}
-                  onClick={() => setSmartFilter(smartFilter === filter ? null : filter)}
-                  buttonType={smartFilter === filter ? BlendButtonType.PRIMARY : BlendButtonType.SECONDARY}
-                  size={BlendButtonSize.SMALL}
-                  text={filter}
-                />
-              ))}
-            </div>
-          )}
+
 
           {/* Bulk Actions Bar (shows when items selected) */}
           {selectedRows.size > 1 && (
@@ -3508,6 +3496,9 @@ export default function App() {
           </motion.div>
         )}
         </AnimatePresence>
+            </>
+          } />
+        </Routes>
       </main>
 
       {!isMobile && isAIChatOpen && (
@@ -3599,7 +3590,7 @@ export default function App() {
                 </div>
                 <div className="space-y-1">
                   <button
-                    onClick={() => { setCurrentView('create-pr'); setFabOpen(false); }}
+                    onClick={() => { navigate('/createPR'); setFabOpen(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-md shadow-blue-100"
                   >
                     <Plus className="w-4 h-4" />
@@ -3774,3 +3765,12 @@ export default function App() {
     </div>
   );
 };
+
+// App wrapper with Router
+const AppWithRouter = () => (
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+);
+
+export default AppWithRouter;
